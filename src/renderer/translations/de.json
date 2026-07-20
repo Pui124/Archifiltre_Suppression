@@ -347,7 +347,36 @@
       "filesNumber": "Anzahl der Dateien",
       "spaceUsed": "Größe im Dateibaum",
       "percentage": "Prozentsatz (Größe)",
-      "duplicatesList": "Liste der Elemente (gilt nicht für .zip)"
+      "duplicatesList": "Liste der Elemente (gilt nicht für .zip)",
+      "deletion": {
+        "title": "Duplikate löschen",
+        "empty": "Keine Duplikate gefunden. Berechnen Sie zuerst die Prüfsummen.",
+        "statGroups": "Gruppen",
+        "statCopies": "Ausgewählte Kopien",
+        "statSpace": "Freigebbarer Speicher",
+        "filterPlaceholder": "Nach Name oder Pfad filtern…",
+        "selectAll": "Alle auswählen",
+        "sortBy": "Sortieren nach",
+        "toggleSortDirection": "Sortierreihenfolge umkehren",
+        "sort": {
+          "size": "Größe",
+          "lastModified": "Änderungsdatum",
+          "extension": "Erweiterung",
+          "copies": "Anzahl der Kopien"
+        },
+        "verifyMd5": "MD5 vor dem Löschen prüfen",
+        "generateReport": "Bericht erstellen",
+        "reportFileType": "Textbericht",
+        "original": "ORIGINAL",
+        "groupSummary": "{{count}} Kopie(n) · {{size}} freigebbar",
+        "deleteButton": "Auswahl löschen ({{count}})",
+        "deleting": "Löschen…",
+        "progress": "{{done}} / {{total}} verarbeitet",
+        "confirm": "{{count}} Datei(en) in den Papierkorb verschieben?",
+        "reportTitle": "Löschen abgeschlossen",
+        "reportBody": "{{deleted}} gelöscht, {{skipped}} übersprungen, {{errors}} Fehler",
+        "reportError": "Bericht konnte nicht geschrieben werden"
+      }
     }
   }
 }

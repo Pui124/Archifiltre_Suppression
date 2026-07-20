@@ -11,6 +11,7 @@ import type {
 import {
   ADD_CHILD,
   ADD_COMMENTS_ON_FILES_AND_FOLDERS,
+  DELETE_FILES_AND_FOLDERS,
   INIT_OVERRIDE_LAST_MODIFIED,
   INIT_VIRTUAL_PATH_TO_ID_MAP,
   INITIALIZE_FILES_AND_FOLDERS,
@@ -115,6 +116,20 @@ export const removeChild = (
   childId,
   parentId,
   type: REMOVE_CHILD,
+});
+
+/**
+ * Permanently removes elements from the files and folders map (e.g. after they
+ * have been deleted on disk). Unlike `removeChild`, which only detaches an
+ * element from its parent, this drops the elements themselves so every
+ * derived view (duplicates count, distribution, tree…) stops counting them.
+ * @param elementIds - ids of the elements to delete from the store
+ */
+export const deleteFilesAndFolders = (
+  elementIds: string[]
+): FilesAndFoldersActionTypes => ({
+  elementIds,
+  type: DELETE_FILES_AND_FOLDERS,
 });
 
 /**

@@ -347,7 +347,36 @@
       "filesNumber": "Nombre de fichiers",
       "spaceUsed": "Espace sur l'arborescence",
       "percentage": "Pourcentage (taille)",
-      "duplicatesList": "Liste des éléments (ne s’applique pas aux .zip)"
+      "duplicatesList": "Liste des éléments (ne s’applique pas aux .zip)",
+      "deletion": {
+        "title": "Suppression des doublons",
+        "empty": "Aucun doublon détecté. Lance d'abord le calcul des empreintes.",
+        "statGroups": "Groupes",
+        "statCopies": "Copies sélectionnées",
+        "statSpace": "Espace récupérable",
+        "filterPlaceholder": "Filtrer par nom ou chemin…",
+        "selectAll": "Tout sélectionner",
+        "sortBy": "Trier par",
+        "toggleSortDirection": "Inverser l'ordre de tri",
+        "sort": {
+          "size": "Poids",
+          "lastModified": "Date de modification",
+          "extension": "Extension",
+          "copies": "Nombre de copies"
+        },
+        "verifyMd5": "Vérifier le MD5 avant suppression",
+        "generateReport": "Générer un rapport",
+        "reportFileType": "Rapport texte",
+        "original": "ORIGINAL",
+        "groupSummary": "{{count}} copie(s) · {{size}} récupérables",
+        "deleteButton": "Supprimer la sélection ({{count}})",
+        "deleting": "Suppression…",
+        "progress": "{{done}} / {{total}} traité(s)",
+        "confirm": "Envoyer {{count}} fichier(s) à la corbeille ?",
+        "reportTitle": "Suppression terminée",
+        "reportBody": "{{deleted}} supprimé(s), {{skipped}} ignoré(s), {{errors}} erreur(s)",
+        "reportError": "Échec de l'écriture du rapport"
+      }
     }
   }
 }

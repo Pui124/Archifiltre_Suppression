@@ -347,7 +347,36 @@
       "filesNumber": "Number of files",
       "spaceUsed": "Size in file tree",
       "percentage": "Percentage (size)",
-      "duplicatesList": "List of items (does not apply to .zip)"
+      "duplicatesList": "List of items (does not apply to .zip)",
+      "deletion": {
+        "title": "Duplicate deletion",
+        "empty": "No duplicates detected. Compute the hashes first.",
+        "statGroups": "Groups",
+        "statCopies": "Selected copies",
+        "statSpace": "Reclaimable space",
+        "filterPlaceholder": "Filter by name or path…",
+        "selectAll": "Select all",
+        "sortBy": "Sort by",
+        "toggleSortDirection": "Reverse sort order",
+        "sort": {
+          "size": "Size",
+          "lastModified": "Last modified",
+          "extension": "Extension",
+          "copies": "Number of copies"
+        },
+        "verifyMd5": "Verify MD5 before deletion",
+        "generateReport": "Generate a report",
+        "reportFileType": "Text report",
+        "original": "ORIGINAL",
+        "groupSummary": "{{count}} copy(ies) · {{size}} reclaimable",
+        "deleteButton": "Delete selection ({{count}})",
+        "deleting": "Deleting…",
+        "progress": "{{done}} / {{total}} processed",
+        "confirm": "Send {{count}} file(s) to the trash?",
+        "reportTitle": "Deletion complete",
+        "reportBody": "{{deleted}} deleted, {{skipped}} skipped, {{errors}} error(s)",
+        "reportError": "Failed to write the report"
+      }
     }
   }
 }

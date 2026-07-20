@@ -1,6 +1,7 @@
 import {
   addChild,
   addCommentsOnFilesAndFolders,
+  deleteFilesAndFolders,
   initializeFilesAndFolders,
   initOverrideLastModified,
   initVirtualPathToIdMap,
@@ -183,6 +184,32 @@ describe("files-and-folders-reducer", () => {
           },
         },
       });
+    });
+  });
+
+  describe("DELETE_FILES_AND_FOLDERS", () => {
+    it("should drop the deleted elements from the map", () => {
+      const parentId = "/1";
+      const keptId = "/1/keep";
+      const deletedId = "/1/gone";
+      const filesAndFolders = {
+        [deletedId]: createFilesAndFolders({ id: deletedId }),
+        [keptId]: createFilesAndFolders({ id: keptId }),
+        [parentId]: createFilesAndFolders({
+          children: [keptId],
+          id: parentId,
+        }),
+      };
+
+      const state = { ...baseState, filesAndFolders };
+      const result = filesAndFoldersReducer(
+        state,
+        deleteFilesAndFolders([deletedId])
+      );
+
+      expect(result.filesAndFolders).not.toHaveProperty(deletedId);
+      expect(result.filesAndFolders).toHaveProperty(keptId);
+      expect(result.filesAndFolders).toHaveProperty(parentId);
     });
   });
 
