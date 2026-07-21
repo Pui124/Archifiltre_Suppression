@@ -47,6 +47,10 @@ Fonctionnement :
   éléments sont retirés de l'arborescence et l'onglet Redondances est recalculé
   (le compteur repasse à 0 doublon lorsque toutes les copies ont été traitées).
 
+Exemple de rapport `.txt` généré après une suppression :
+
+![Exemple de rapport de suppression](docs/rapport-suppression.png)
+
 ## 🚀 Launch the app
 
 First install the dependencies
