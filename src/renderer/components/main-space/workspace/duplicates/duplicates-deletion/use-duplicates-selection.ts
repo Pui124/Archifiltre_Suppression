@@ -55,9 +55,9 @@ export const useDuplicatesSelection = (
 
   const signature = filesSignature(groups);
   useEffect(() => {
-    // Default: every copy pre-selected for deletion.
+    // Default: every copy pre-selected for deletion. Re-runs only when the set
+    // of files changes (signature), which is exactly when copyIds changes too.
     setSelectedIds(new Set(copyIds));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signature]);
 
   const isSelected = useCallback(

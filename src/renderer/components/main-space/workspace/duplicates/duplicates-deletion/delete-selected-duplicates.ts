@@ -78,7 +78,7 @@ export const deleteSelectedDuplicates = async (
 
         await moveElementToTrash(file.absolutePath);
         report({ id: file.id, status: "deleted" });
-      } catch (error) {
+      } catch (error: unknown) {
         report({
           id: file.id,
           message: error instanceof Error ? error.message : String(error),
