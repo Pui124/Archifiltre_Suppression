@@ -43,21 +43,41 @@ const Workspace: React.FC = () => {
             <TabsContent tabIndex={tabIndex} />
           </Box>
         </Box>
-        <Box flexGrow={1} flexShrink={1} flexBasis="auto" overflow="hidden">
-          {areIciclesDisplayed(tabIndex) ? (
-            <Box display="flex" flexDirection="column" height="100%">
-              <Box flexGrow={0}>
-                <NavigationBar />
-              </Box>
-              <Box flexGrow={1} overflow="hidden">
-                <Icicle rightSidebar={minimapReplaceComponent(tabIndex)} />
-              </Box>
-              <Box position="absolute" bottom={15} right={15}>
-                <HelpButton />
-              </Box>
+        <Box
+          flexGrow={1}
+          flexShrink={1}
+          flexBasis="auto"
+          overflow="hidden"
+          position="relative"
+        >
+          {/* The icicle is kept mounted across tab changes: remounting it on a
+              large tree is what froze the whole app when leaving Redondances.
+              On the Redondances tab it is simply covered by the duplicates
+              search overlay instead of being unmounted/recomputed. */}
+          <Box display="flex" flexDirection="column" height="100%">
+            <Box flexGrow={0}>
+              <NavigationBar />
             </Box>
-          ) : (
-            <DuplicatesSearch />
+            <Box flexGrow={1} overflow="hidden">
+              <Icicle rightSidebar={minimapReplaceComponent(tabIndex)} />
+            </Box>
+            <Box position="absolute" bottom={15} right={15}>
+              <HelpButton />
+            </Box>
+          </Box>
+          {!areIciclesDisplayed(tabIndex) && (
+            <Box
+              position="absolute"
+              top={0}
+              left={0}
+              right={0}
+              bottom={0}
+              zIndex={2}
+              bgcolor="#FFFFFF"
+              overflow="hidden"
+            >
+              <DuplicatesSearch />
+            </Box>
           )}
         </Box>
       </Box>
