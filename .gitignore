@@ -16,3 +16,5 @@ workflow/
 pr_event.json
 scripts/out/*
 .idea/
+# TypeScript incremental build info
+*.tsbuildinfo
