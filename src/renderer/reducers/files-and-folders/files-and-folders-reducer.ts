@@ -131,13 +131,35 @@ const filesAndFoldersReducer = (
           },
         },
       };
-    case DELETE_FILES_AND_FOLDERS:
-      // Drop the elements themselves from the map. Parents are detached
-      // beforehand via REMOVE_CHILD in the removeElementsFromStore thunk.
+    case DELETE_FILES_AND_FOLDERS: {
+      // Single pass: drop the deleted elements from the map AND detach them from
+      // their parents' children. Doing both here (instead of one REMOVE_CHILD
+      // dispatch per element) keeps a mass deletion to a single store update,
+      // which is essential on large trees — thousands of dispatches meant
+      // thousands of full re-renders and froze the app.
+      const deletedIds = new Set(action.elementIds);
+      const nextFilesAndFolders: FilesAndFoldersMap = {};
+      Object.keys(state.filesAndFolders).forEach((id) => {
+        if (deletedIds.has(id)) {
+          return;
+        }
+        const element = state.filesAndFolders[id];
+        nextFilesAndFolders[id] = element.children.some((childId) =>
+          deletedIds.has(childId)
+        )
+          ? {
+              ...element,
+              children: element.children.filter(
+                (childId) => !deletedIds.has(childId)
+              ),
+            }
+          : element;
+      });
       return {
         ...state,
-        filesAndFolders: _.omit(state.filesAndFolders, action.elementIds),
+        filesAndFolders: nextFilesAndFolders,
       };
+    }
     case SET_FILES_AND_FOLDERS_ALIAS:
       return {
         ...state,

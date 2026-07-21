@@ -188,7 +188,7 @@ describe("files-and-folders-reducer", () => {
   });
 
   describe("DELETE_FILES_AND_FOLDERS", () => {
-    it("should drop the deleted elements from the map", () => {
+    it("drops the deleted elements and detaches them from their parent in one pass", () => {
       const parentId = "/1";
       const keptId = "/1/keep";
       const deletedId = "/1/gone";
@@ -196,7 +196,7 @@ describe("files-and-folders-reducer", () => {
         [deletedId]: createFilesAndFolders({ id: deletedId }),
         [keptId]: createFilesAndFolders({ id: keptId }),
         [parentId]: createFilesAndFolders({
-          children: [keptId],
+          children: [keptId, deletedId],
           id: parentId,
         }),
       };
@@ -209,7 +209,32 @@ describe("files-and-folders-reducer", () => {
 
       expect(result.filesAndFolders).not.toHaveProperty(deletedId);
       expect(result.filesAndFolders).toHaveProperty(keptId);
-      expect(result.filesAndFolders).toHaveProperty(parentId);
+      // Parent kept, but the deleted child is detached from its children.
+      expect(result.filesAndFolders[parentId].children).toEqual([keptId]);
+    });
+
+    it("keeps unaffected parents referentially stable", () => {
+      const parentId = "/1";
+      const otherId = "/2";
+      const deletedId = "/1/gone";
+      const filesAndFolders = {
+        [deletedId]: createFilesAndFolders({ id: deletedId }),
+        [otherId]: createFilesAndFolders({ id: otherId }),
+        [parentId]: createFilesAndFolders({
+          children: [deletedId],
+          id: parentId,
+        }),
+      };
+
+      const state = { ...baseState, filesAndFolders };
+      const result = filesAndFoldersReducer(
+        state,
+        deleteFilesAndFolders([deletedId])
+      );
+
+      // An element with no deleted child is not re-created (same reference).
+      expect(result.filesAndFolders[otherId]).toBe(filesAndFolders[otherId]);
+      expect(result.filesAndFolders[parentId].children).toEqual([]);
     });
   });
 

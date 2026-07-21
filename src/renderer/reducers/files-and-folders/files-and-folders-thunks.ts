@@ -98,17 +98,10 @@ const isMoveValid = (
 export const removeElementsFromStore =
   (elementIds: string[]): ArchifiltreDocsThunkAction =>
   (dispatch, getState) => {
-    const filesAndFolders = getFilesAndFoldersFromStore(getState());
-
-    elementIds.forEach((elementId) => {
-      const parent = findElementParent(elementId, filesAndFolders);
-      if (parent) {
-        dispatch(removeChild(parent.id, elementId));
-      }
-    });
-
-    // Actually drop the elements from the map so the duplicates recomputation
-    // no longer counts them (REMOVE_CHILD only detaches them from their parent).
+    // A single batched action detaches the elements from their parents and drops
+    // them from the map at once. This is critical on large deletions: one
+    // dispatch per element meant thousands of store updates / full re-renders
+    // (of the icicle over the whole tree, ...) and froze the app near the end.
     dispatch(deleteFilesAndFolders(elementIds));
 
     const updatedFilesAndFolders = getFilesAndFoldersFromStore(getState());
