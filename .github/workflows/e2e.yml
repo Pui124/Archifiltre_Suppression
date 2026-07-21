@@ -1,11 +1,9 @@
 name: E2E
 on:
-  push:
-    branches: [ci-e2e/*, "*/e2e/*"]
-  pull_request:
-    branches: [main]
-  schedule:
-    - cron: 0 1 * * 1-5 # every night before week day, at 1am on dev
+  # Désactivé sur ce fork : le globalSetup Playwright (tests/setup/e2e.ts) est
+  # absent de ce dépôt, donc l'E2E ne peut pas s'exécuter ici. Conservé en
+  # déclenchement manuel uniquement.
+  workflow_dispatch:
 
 env:
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1

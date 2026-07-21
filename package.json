@@ -21,6 +21,7 @@
     "test:e2e": "playwright test --workers=1",
     "compile": "cross-env 'NODE_OPTIONS=\"--max-old-space-size=4096\"' electron-webpack",
     "dist:win": "cross-env ELECTRON_FORCE_IS_PACKAGED=true electron-builder --x64 --ia32 --win portable msi nsis",
+    "dist:win-portable": "cross-env ELECTRON_FORCE_IS_PACKAGED=true electron-builder --x64 --win portable",
     "dist:mac": "cross-env ELECTRON_FORCE_IS_PACKAGED=true electron-builder --mac --x64 --arm64",
     "dist:mac-local": "cross-env ELECTRON_FORCE_IS_PACKAGED=true CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac dmg",
     "dist:linux": "cross-env ELECTRON_FORCE_IS_PACKAGED=true electron-builder --linux",

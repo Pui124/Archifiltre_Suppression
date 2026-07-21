@@ -37,6 +37,10 @@ declare module "../ipc/event" {
       Parameters<Shell["showItemInFolder"]>,
       ReturnType<Shell["showItemInFolder"]>
     >;
+    "shell.trashItem": IpcConfig<
+      Parameters<Shell["trashItem"]>,
+      ReturnType<Shell["trashItem"]>
+    >;
   }
 }
 
@@ -66,5 +70,8 @@ export const loadApp = (): void => {
   });
   ipcMain.handle("shell.openExternal", async (_event, fullPath, options) =>
     shell.openExternal(fullPath, options)
+  );
+  ipcMain.handle("shell.trashItem", async (_event, fullPath) =>
+    shell.trashItem(fullPath)
   );
 };

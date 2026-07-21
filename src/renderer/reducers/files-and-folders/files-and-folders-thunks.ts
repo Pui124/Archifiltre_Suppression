@@ -12,6 +12,7 @@ import { initFilesAndFoldersMetatada } from "../files-and-folders-metadata/files
 import {
   addChild,
   addCommentsOnFilesAndFolders,
+  deleteFilesAndFolders,
   overrideLastModified,
   removeChild,
   setFilesAndFoldersAliases,
@@ -84,6 +85,40 @@ const isMoveValid = (
 
   return null;
 };
+
+/**
+ * Removes elements from the store after they have actually been deleted on
+ * disk (e.g. sent to the trash by the mass duplicate-deletion feature). Detaches
+ * each element from its parent, drops the elements themselves from the map, then
+ * recomputes metadata and commits so every derived view (duplicates count,
+ * distribution, tree, ...) refreshes — showing 0 duplicates once every copy is
+ * gone.
+ * @param elementIds - ids of the elements to remove from the store
+ */
+export const removeElementsFromStore =
+  (elementIds: string[]): ArchifiltreDocsThunkAction =>
+  (dispatch, getState) => {
+    const filesAndFolders = getFilesAndFoldersFromStore(getState());
+
+    elementIds.forEach((elementId) => {
+      const parent = findElementParent(elementId, filesAndFolders);
+      if (parent) {
+        dispatch(removeChild(parent.id, elementId));
+      }
+    });
+
+    // Actually drop the elements from the map so the duplicates recomputation
+    // no longer counts them (REMOVE_CHILD only detaches them from their parent).
+    dispatch(deleteFilesAndFolders(elementIds));
+
+    const updatedFilesAndFolders = getFilesAndFoldersFromStore(getState());
+    dispatch(
+      initFilesAndFoldersMetatada(
+        createFilesAndFoldersMetadataDataStructure(updatedFilesAndFolders)
+      )
+    );
+    dispatch(commitAction());
+  };
 
 /**
  * Allows to virtually move a file system element to another location

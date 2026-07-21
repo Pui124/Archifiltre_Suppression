@@ -3,6 +3,7 @@ import type { Action } from "redux";
 
 export const INITIALIZE_FILES_AND_FOLDERS = "FILES_AND_FOLDERS/INITIALIZE";
 export const REMOVE_CHILD = "FILES_AND_FOLDERS/REMOVE_CHILD";
+export const DELETE_FILES_AND_FOLDERS = "FILES_AND_FOLDERS/DELETE";
 export const ADD_CHILD = "FILES_AND_FOLDERS/ADD_CHILD";
 export const SET_FILES_AND_FOLDERS_ALIAS = "FILES_AND_FOLDERS/SET_ALIAS";
 export const ADD_COMMENTS_ON_FILES_AND_FOLDERS =
@@ -75,6 +76,11 @@ interface RemoveChildAction extends Action {
   type: typeof REMOVE_CHILD;
 }
 
+interface DeleteFilesAndFoldersAction extends Action {
+  elementIds: string[];
+  type: typeof DELETE_FILES_AND_FOLDERS;
+}
+
 interface AddChildAction extends Action {
   childId: string;
   parentId: string;
@@ -143,6 +149,7 @@ interface ResetOverrideLastModified extends Action {
 export type FilesAndFoldersActionTypes =
   | AddChildAction
   | AddCommentsOnFilesAndFoldersAction
+  | DeleteFilesAndFoldersAction
   | InitializeFilesAndFoldersAction
   | InitOverrideLastModified
   | InitVirtualPathToIdMap

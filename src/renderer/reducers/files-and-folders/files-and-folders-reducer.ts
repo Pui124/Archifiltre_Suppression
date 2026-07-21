@@ -11,6 +11,7 @@ import type {
 import {
   ADD_CHILD,
   ADD_COMMENTS_ON_FILES_AND_FOLDERS,
+  DELETE_FILES_AND_FOLDERS,
   INIT_OVERRIDE_LAST_MODIFIED,
   INIT_VIRTUAL_PATH_TO_ID_MAP,
   INITIALIZE_FILES_AND_FOLDERS,
@@ -129,6 +130,13 @@ const filesAndFoldersReducer = (
             ),
           },
         },
+      };
+    case DELETE_FILES_AND_FOLDERS:
+      // Drop the elements themselves from the map. Parents are detached
+      // beforehand via REMOVE_CHILD in the removeElementsFromStore thunk.
+      return {
+        ...state,
+        filesAndFolders: _.omit(state.filesAndFolders, action.elementIds),
       };
     case SET_FILES_AND_FOLDERS_ALIAS:
       return {
