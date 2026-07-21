@@ -1,16 +1,14 @@
 import crypto from "crypto";
 import fs from "fs";
 
+import type { DeletionResult } from "../../../../../reducers/duplicates-deletion/duplicates-deletion-types";
 import type { DuplicateGroup } from "../../../../../utils/duplicates-deletion";
 import { moveElementToTrash } from "../../../../../utils/file-system/file-system-util";
 
-export type DeletionStatus = "deleted" | "error" | "skipped";
-
-export interface DeletionResult {
-  id: string;
-  message?: string;
-  status: DeletionStatus;
-}
+export type {
+  DeletionResult,
+  DeletionStatus,
+} from "../../../../../reducers/duplicates-deletion/duplicates-deletion-types";
 
 export interface DeleteOptions {
   /** re-hash the copy and its original and only delete on a content match */

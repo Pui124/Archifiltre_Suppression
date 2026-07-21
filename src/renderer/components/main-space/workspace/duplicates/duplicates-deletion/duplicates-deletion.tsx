@@ -8,11 +8,13 @@ import Select from "@material-ui/core/Select";
 import TextField from "@material-ui/core/TextField";
 import Typography from "@material-ui/core/Typography";
 import path from "path";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
-import { removeElementsFromStore } from "../../../../../reducers/files-and-folders/files-and-folders-thunks";
+import { useDuplicatesDeletionState } from "../../../../../reducers/duplicates-deletion/duplicates-deletion-selectors";
+import { runDuplicatesDeletion } from "../../../../../reducers/duplicates-deletion/duplicates-deletion-thunks";
+import type { DeletionResult } from "../../../../../reducers/duplicates-deletion/duplicates-deletion-types";
 import { getOriginalPathFromStore } from "../../../../../reducers/workspace-metadata/workspace-metadata-selectors";
 import { bytes2HumanReadableFormat } from "../../../../../utils";
 import type {
@@ -26,10 +28,7 @@ import {
   useDuplicateGroups,
 } from "../../../../../utils/duplicates-deletion";
 import { promptUserForSave } from "../../../../../utils/file-system/file-system-util";
-import { notifyError, notifySuccess } from "../../../../../utils/notifications";
-import type { DeletionResult } from "./delete-selected-duplicates";
-import { deleteSelectedDuplicates } from "./delete-selected-duplicates";
-import { buildDeletionReport, writeDeletionReport } from "./deletion-report";
+import { Paginator } from "../../../../modals/search-modal/paginator";
 import { useDuplicatesSelection } from "./use-duplicates-selection";
 
 const SORT_KEYS: DuplicateSortKey[] = [
@@ -70,17 +69,24 @@ export const DuplicatesDeletion: React.FC = () => {
   const groups = useDuplicateGroups();
   const selection = useDuplicatesSelection(groups);
 
+  // Deletion state lives in the store so the run survives this panel unmounting
+  // when the user leaves the Redondances tab, and stays visible globally.
+  const deletion = useDuplicatesDeletionState();
+  const isDeleting = deletion.isRunning;
+  const results = deletion.results;
+  const progress = { done: deletion.processed, total: deletion.total };
+
   const [query, setQuery] = useState("");
   const [verifyMd5, setVerifyMd5] = useState(true);
   const [generateReport, setGenerateReport] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [sortKey, setSortKey] = useState<DuplicateSortKey>("size");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
-  const [results, setResults] = useState<Map<string, DeletionResult>>(
-    new Map()
-  );
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  // Groups are collapsed by default: expanding a group is opt-in, so a page only
+  // renders group headers (bounded), never every duplicate file at once — which
+  // is what froze the app on large workspaces.
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(50);
 
   const normalizedQuery = query.trim().toLowerCase();
   const filteredGroups = useMemo(() => {
@@ -92,8 +98,22 @@ export const DuplicatesDeletion: React.FC = () => {
     return sortDuplicateGroups(matching, sortKey, sortDirection);
   }, [groups, normalizedQuery, sortKey, sortDirection]);
 
-  const toggleCollapsed = (hash: string) => {
-    setCollapsed((previous) => {
+  // Keep the current page within bounds when the filtered list changes.
+  useEffect(() => {
+    setPage(0);
+  }, [normalizedQuery, sortKey, sortDirection, rowsPerPage]);
+
+  const pagedGroups = useMemo(
+    () =>
+      filteredGroups.slice(
+        page * rowsPerPage,
+        page * rowsPerPage + rowsPerPage
+      ),
+    [filteredGroups, page, rowsPerPage]
+  );
+
+  const toggleExpanded = (hash: string) => {
+    setExpanded((previous) => {
       const next = new Set(previous);
       if (next.has(hash)) {
         next.delete(hash);
@@ -139,57 +159,17 @@ export const DuplicatesDeletion: React.FC = () => {
       }
     }
 
-    setIsDeleting(true);
-    setResults(new Map());
-    setProgress({ done: 0, total: selection.selectedCount });
-
-    const deletionResults = await deleteSelectedDuplicates(
-      groups,
-      selection.selectedIds,
-      { verifyMd5 },
-      (result) => {
-        setResults((previous) => new Map(previous).set(result.id, result));
-        setProgress((previous) => ({
-          done: previous.done + 1,
-          total: previous.total,
-        }));
-      }
-    );
-
-    const deletedIds = deletionResults
-      .filter((result) => result.status === "deleted")
-      .map((result) => result.id);
-    if (deletedIds.length > 0) {
-      // Refresh the Archifiltre analysis (tree, metadata, other duplicate views).
-      dispatch(removeElementsFromStore(deletedIds));
-    }
-
-    if (reportPath) {
-      try {
-        const { content } = buildDeletionReport(groups, deletionResults, {
-          rootPath: originalPath,
-        });
-        await writeDeletionReport(reportPath, content);
-      } catch (error: unknown) {
-        notifyError(
-          error instanceof Error ? error.message : String(error),
-          t("duplicates.deletion.reportError")
-        );
-      }
-    }
-
-    const deleted = deletedIds.length;
-    const skipped = deletionResults.filter(
-      (result) => result.status === "skipped"
-    ).length;
-    const errors = deletionResults.filter(
-      (result) => result.status === "error"
-    ).length;
-
-    setIsDeleting(false);
-    notifySuccess(
-      t("duplicates.deletion.reportBody", { deleted, errors, skipped }),
-      t("duplicates.deletion.reportTitle")
+    // Fire-and-forget: the thunk runs the deletion at the store level, so it
+    // keeps going (and stays visible via the global indicator) even if this
+    // panel unmounts because the user switches tab.
+    dispatch(
+      runDuplicatesDeletion({
+        groups,
+        reportPath,
+        rootPath: originalPath,
+        selectedIds: selection.selectedIds,
+        verifyMd5,
+      })
     );
   };
 
@@ -204,7 +184,8 @@ export const DuplicatesDeletion: React.FC = () => {
   }
 
   const renderStatusIcon = (id: string) => {
-    const result = results.get(id);
+    // Record access is not undefined-checked by TS, but not every id has a result.
+    const result = results[id] as DeletionResult | undefined;
     if (!result) {
       return null;
     }
@@ -232,7 +213,7 @@ export const DuplicatesDeletion: React.FC = () => {
     const selectedCopies = copies.filter((file) =>
       selection.isSelected(file.id)
     ).length;
-    const isCollapsed = collapsed.has(group.hash);
+    const isCollapsed = !expanded.has(group.hash);
 
     return (
       <Box key={group.hash} mb={1} border="1px solid #DEDAEB" borderRadius={6}>
@@ -251,7 +232,7 @@ export const DuplicatesDeletion: React.FC = () => {
             alignItems="center"
             style={{ cursor: "pointer" }}
             onClick={() => {
-              toggleCollapsed(group.hash);
+              toggleExpanded(group.hash);
             }}
           >
             <Box component="span" mr={1}>
@@ -432,8 +413,24 @@ export const DuplicatesDeletion: React.FC = () => {
       )}
 
       <Box flexGrow={1} overflow="auto">
-        {filteredGroups.map(renderGroup)}
+        {pagedGroups.map(renderGroup)}
       </Box>
+
+      {filteredGroups.length > rowsPerPage && (
+        <Paginator
+          pageCount={filteredGroups.length}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          handleChangePage={(_event, nextPage) => {
+            setPage(nextPage);
+          }}
+          handleChangeRowsPerPage={(event) => {
+            setRowsPerPage(parseInt(event.target.value, 10));
+            setPage(0);
+          }}
+          labelRowsPerPage={t("duplicates.deletion.groupsPerPage")}
+        />
+      )}
     </Box>
   );
 };

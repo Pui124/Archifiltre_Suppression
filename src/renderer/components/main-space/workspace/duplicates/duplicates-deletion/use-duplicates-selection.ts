@@ -53,7 +53,9 @@ export const useDuplicatesSelection = (
     return { copyIds: copies, sizeById: sizes };
   }, [groups]);
 
-  const signature = filesSignature(groups);
+  // Memoized so it is not rebuilt (O(all files)) on every render — e.g. on each
+  // per-file progress update during a large deletion.
+  const signature = useMemo(() => filesSignature(groups), [groups]);
   useEffect(() => {
     // Default: every copy pre-selected for deletion. Re-runs only when the set
     // of files changes (signature), which is exactly when copyIds changes too.
