@@ -24,6 +24,8 @@ fonctionnalité de suppression massive des fichiers en double, directement
 intégrée à l'analyse Archifiltre (dans l'esprit du script autonome
 `Script_Suppression_Doublons`).
 
+![Onglet Suppression des doublons](docs/suppression-doublons.png)
+
 Fonctionnement :
 
 - **Détection par empreinte** : les fichiers partageant la même empreinte (hash)
