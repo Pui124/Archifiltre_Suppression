@@ -1,12 +1,10 @@
 name: CodeQL
 
 on:
-  push:
-    branches: [main, dev]
-  pull_request:
-    branches: [main, dev]
-  schedule:
-    - cron: 0 19 * * 0
+  # Désactivé sur ce fork : CodeQL nécessite GitHub Advanced Security / des
+  # permissions indisponibles sur un fork ("Resource not accessible by
+  # integration"). Conservé en déclenchement manuel uniquement.
+  workflow_dispatch:
 
 jobs:
   analyze:

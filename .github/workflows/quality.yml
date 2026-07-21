@@ -38,7 +38,9 @@ jobs:
         run: yarn lint
 
       - name: Unit tests
-        run: yarn test --ci --coverage
+        run: yarn test --ci --coverage --maxWorkers=2
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
 
       - name: Send test coverage to codecov
         continue-on-error: true
