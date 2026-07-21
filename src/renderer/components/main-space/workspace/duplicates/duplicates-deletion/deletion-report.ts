@@ -1,11 +1,11 @@
 import fs from "fs";
 
+import type { DeletionResult } from "../../../../../reducers/duplicates-deletion/duplicates-deletion-types";
 import { bytes2HumanReadableFormat } from "../../../../../utils";
 import type {
   DuplicateFile,
   DuplicateGroup,
 } from "../../../../../utils/duplicates-deletion";
-import type { DeletionResult } from "./delete-selected-duplicates";
 
 const STATUS_LABELS: Record<DeletionResult["status"], string> = {
   deleted: "Supprimé",

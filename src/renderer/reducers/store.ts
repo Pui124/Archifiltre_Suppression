@@ -2,6 +2,8 @@ import type { HashesState } from "@common/utils/hashes-types";
 import { applyMiddleware, combineReducers, createStore } from "redux";
 import thunk from "redux-thunk";
 
+import { duplicatesDeletionReducer } from "./duplicates-deletion/duplicates-deletion-reducer";
+import type { DuplicatesDeletionState } from "./duplicates-deletion/duplicates-deletion-types";
 import type { UndoableState } from "./enhancers/undoable/undoable-types";
 import { undoableFilesAndFoldersReducer as filesAndFoldersReducer } from "./files-and-folders/files-and-folders-reducer";
 import type { FilesAndFoldersState } from "./files-and-folders/files-and-folders-types";
@@ -27,6 +29,7 @@ import { undoableWorkspaceMetadataReducer as workspaceMetadataReducer } from "./
 import type { WorkspaceMetadataState } from "./workspace-metadata/workspace-metadata-types";
 
 export interface StoreState {
+  duplicatesDeletion: DuplicatesDeletionState;
   filesAndFolders: UndoableState<FilesAndFoldersState>;
   filesAndFoldersMetadata: UndoableState<FilesAndFoldersMetadataState>;
   hashes: HashesState;
@@ -42,6 +45,7 @@ export interface StoreState {
 
 export const store = createStore(
   combineReducers({
+    duplicatesDeletion: duplicatesDeletionReducer,
     filesAndFolders: filesAndFoldersReducer,
     filesAndFoldersMetadata: filesAndFoldersMetadataReducer,
     hashes: hashesReducer,

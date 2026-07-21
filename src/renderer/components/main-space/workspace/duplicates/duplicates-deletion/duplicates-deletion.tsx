@@ -12,7 +12,9 @@ import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
-import { removeElementsFromStore } from "../../../../../reducers/files-and-folders/files-and-folders-thunks";
+import { useDuplicatesDeletionState } from "../../../../../reducers/duplicates-deletion/duplicates-deletion-selectors";
+import { runDuplicatesDeletion } from "../../../../../reducers/duplicates-deletion/duplicates-deletion-thunks";
+import type { DeletionResult } from "../../../../../reducers/duplicates-deletion/duplicates-deletion-types";
 import { getOriginalPathFromStore } from "../../../../../reducers/workspace-metadata/workspace-metadata-selectors";
 import { bytes2HumanReadableFormat } from "../../../../../utils";
 import type {
@@ -26,10 +28,6 @@ import {
   useDuplicateGroups,
 } from "../../../../../utils/duplicates-deletion";
 import { promptUserForSave } from "../../../../../utils/file-system/file-system-util";
-import { notifyError, notifySuccess } from "../../../../../utils/notifications";
-import type { DeletionResult } from "./delete-selected-duplicates";
-import { deleteSelectedDuplicates } from "./delete-selected-duplicates";
-import { buildDeletionReport, writeDeletionReport } from "./deletion-report";
 import { useDuplicatesSelection } from "./use-duplicates-selection";
 
 const SORT_KEYS: DuplicateSortKey[] = [
@@ -70,16 +68,18 @@ export const DuplicatesDeletion: React.FC = () => {
   const groups = useDuplicateGroups();
   const selection = useDuplicatesSelection(groups);
 
+  // Deletion state lives in the store so the run survives this panel unmounting
+  // when the user leaves the Redondances tab, and stays visible globally.
+  const deletion = useDuplicatesDeletionState();
+  const isDeleting = deletion.isRunning;
+  const results = deletion.results;
+  const progress = { done: deletion.processed, total: deletion.total };
+
   const [query, setQuery] = useState("");
   const [verifyMd5, setVerifyMd5] = useState(true);
   const [generateReport, setGenerateReport] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [sortKey, setSortKey] = useState<DuplicateSortKey>("size");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
-  const [results, setResults] = useState<Map<string, DeletionResult>>(
-    new Map()
-  );
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 
   const normalizedQuery = query.trim().toLowerCase();
@@ -139,57 +139,17 @@ export const DuplicatesDeletion: React.FC = () => {
       }
     }
 
-    setIsDeleting(true);
-    setResults(new Map());
-    setProgress({ done: 0, total: selection.selectedCount });
-
-    const deletionResults = await deleteSelectedDuplicates(
-      groups,
-      selection.selectedIds,
-      { verifyMd5 },
-      (result) => {
-        setResults((previous) => new Map(previous).set(result.id, result));
-        setProgress((previous) => ({
-          done: previous.done + 1,
-          total: previous.total,
-        }));
-      }
-    );
-
-    const deletedIds = deletionResults
-      .filter((result) => result.status === "deleted")
-      .map((result) => result.id);
-    if (deletedIds.length > 0) {
-      // Refresh the Archifiltre analysis (tree, metadata, other duplicate views).
-      dispatch(removeElementsFromStore(deletedIds));
-    }
-
-    if (reportPath) {
-      try {
-        const { content } = buildDeletionReport(groups, deletionResults, {
-          rootPath: originalPath,
-        });
-        await writeDeletionReport(reportPath, content);
-      } catch (error: unknown) {
-        notifyError(
-          error instanceof Error ? error.message : String(error),
-          t("duplicates.deletion.reportError")
-        );
-      }
-    }
-
-    const deleted = deletedIds.length;
-    const skipped = deletionResults.filter(
-      (result) => result.status === "skipped"
-    ).length;
-    const errors = deletionResults.filter(
-      (result) => result.status === "error"
-    ).length;
-
-    setIsDeleting(false);
-    notifySuccess(
-      t("duplicates.deletion.reportBody", { deleted, errors, skipped }),
-      t("duplicates.deletion.reportTitle")
+    // Fire-and-forget: the thunk runs the deletion at the store level, so it
+    // keeps going (and stays visible via the global indicator) even if this
+    // panel unmounts because the user switches tab.
+    dispatch(
+      runDuplicatesDeletion({
+        groups,
+        reportPath,
+        rootPath: originalPath,
+        selectedIds: selection.selectedIds,
+        verifyMd5,
+      })
     );
   };
 
@@ -204,7 +164,8 @@ export const DuplicatesDeletion: React.FC = () => {
   }
 
   const renderStatusIcon = (id: string) => {
-    const result = results.get(id);
+    // Record access is not undefined-checked by TS, but not every id has a result.
+    const result = results[id] as DeletionResult | undefined;
     if (!result) {
       return null;
     }
