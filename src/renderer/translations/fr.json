@@ -372,6 +372,7 @@
         "deleteButton": "Supprimer la sélection ({{count}})",
         "deleting": "Suppression…",
         "progress": "{{done}} / {{total}} traité(s)",
+        "groupsPerPage": "Groupes par page :",
         "confirm": "Envoyer {{count}} fichier(s) à la corbeille ?",
         "reportTitle": "Suppression terminée",
         "reportBody": "{{deleted}} supprimé(s), {{skipped}} ignoré(s), {{errors}} erreur(s)",

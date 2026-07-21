@@ -372,6 +372,7 @@
         "deleteButton": "Auswahl löschen ({{count}})",
         "deleting": "Löschen…",
         "progress": "{{done}} / {{total}} verarbeitet",
+        "groupsPerPage": "Gruppen pro Seite:",
         "confirm": "{{count}} Datei(en) in den Papierkorb verschieben?",
         "reportTitle": "Löschen abgeschlossen",
         "reportBody": "{{deleted}} gelöscht, {{skipped}} übersprungen, {{errors}} Fehler",

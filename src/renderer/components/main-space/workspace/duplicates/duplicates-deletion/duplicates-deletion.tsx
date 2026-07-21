@@ -8,7 +8,7 @@ import Select from "@material-ui/core/Select";
 import TextField from "@material-ui/core/TextField";
 import Typography from "@material-ui/core/Typography";
 import path from "path";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -28,6 +28,7 @@ import {
   useDuplicateGroups,
 } from "../../../../../utils/duplicates-deletion";
 import { promptUserForSave } from "../../../../../utils/file-system/file-system-util";
+import { Paginator } from "../../../../modals/search-modal/paginator";
 import { useDuplicatesSelection } from "./use-duplicates-selection";
 
 const SORT_KEYS: DuplicateSortKey[] = [
@@ -80,7 +81,12 @@ export const DuplicatesDeletion: React.FC = () => {
   const [generateReport, setGenerateReport] = useState(false);
   const [sortKey, setSortKey] = useState<DuplicateSortKey>("size");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  // Groups are collapsed by default: expanding a group is opt-in, so a page only
+  // renders group headers (bounded), never every duplicate file at once — which
+  // is what froze the app on large workspaces.
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(50);
 
   const normalizedQuery = query.trim().toLowerCase();
   const filteredGroups = useMemo(() => {
@@ -92,8 +98,22 @@ export const DuplicatesDeletion: React.FC = () => {
     return sortDuplicateGroups(matching, sortKey, sortDirection);
   }, [groups, normalizedQuery, sortKey, sortDirection]);
 
-  const toggleCollapsed = (hash: string) => {
-    setCollapsed((previous) => {
+  // Keep the current page within bounds when the filtered list changes.
+  useEffect(() => {
+    setPage(0);
+  }, [normalizedQuery, sortKey, sortDirection, rowsPerPage]);
+
+  const pagedGroups = useMemo(
+    () =>
+      filteredGroups.slice(
+        page * rowsPerPage,
+        page * rowsPerPage + rowsPerPage
+      ),
+    [filteredGroups, page, rowsPerPage]
+  );
+
+  const toggleExpanded = (hash: string) => {
+    setExpanded((previous) => {
       const next = new Set(previous);
       if (next.has(hash)) {
         next.delete(hash);
@@ -193,7 +213,7 @@ export const DuplicatesDeletion: React.FC = () => {
     const selectedCopies = copies.filter((file) =>
       selection.isSelected(file.id)
     ).length;
-    const isCollapsed = collapsed.has(group.hash);
+    const isCollapsed = !expanded.has(group.hash);
 
     return (
       <Box key={group.hash} mb={1} border="1px solid #DEDAEB" borderRadius={6}>
@@ -212,7 +232,7 @@ export const DuplicatesDeletion: React.FC = () => {
             alignItems="center"
             style={{ cursor: "pointer" }}
             onClick={() => {
-              toggleCollapsed(group.hash);
+              toggleExpanded(group.hash);
             }}
           >
             <Box component="span" mr={1}>
@@ -393,8 +413,24 @@ export const DuplicatesDeletion: React.FC = () => {
       )}
 
       <Box flexGrow={1} overflow="auto">
-        {filteredGroups.map(renderGroup)}
+        {pagedGroups.map(renderGroup)}
       </Box>
+
+      {filteredGroups.length > rowsPerPage && (
+        <Paginator
+          pageCount={filteredGroups.length}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          handleChangePage={(_event, nextPage) => {
+            setPage(nextPage);
+          }}
+          handleChangeRowsPerPage={(event) => {
+            setRowsPerPage(parseInt(event.target.value, 10));
+            setPage(0);
+          }}
+          labelRowsPerPage={t("duplicates.deletion.groupsPerPage")}
+        />
+      )}
     </Box>
   );
 };

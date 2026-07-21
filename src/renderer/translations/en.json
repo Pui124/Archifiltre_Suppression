@@ -372,6 +372,7 @@
         "deleteButton": "Delete selection ({{count}})",
         "deleting": "Deleting…",
         "progress": "{{done}} / {{total}} processed",
+        "groupsPerPage": "Groups per page:",
         "confirm": "Send {{count}} file(s) to the trash?",
         "reportTitle": "Deletion complete",
         "reportBody": "{{deleted}} deleted, {{skipped}} skipped, {{errors}} error(s)",
