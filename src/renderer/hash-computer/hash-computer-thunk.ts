@@ -5,6 +5,7 @@ import {
   hashErrorToArchifiltreDocsError,
 } from "@common/utils/hash";
 import type { HashesMap } from "@common/utils/hashes-types";
+import { throttle } from "lodash";
 import path from "path";
 import type { Dispatch } from "react";
 import type { AnyAction } from "redux";
@@ -71,7 +72,12 @@ const computeFileHashesImplThunk =
   async (dispatch: Dispatch<AnyAction>): Promise<number> => {
     dispatch(resetErroredHashes());
     const basePath = path.dirname(originalPath);
-    const hashes$ = computeHashes(fileIds, basePath);
+    // Throttle côté renderer : sur un gros arbre, chaque dispatch redéclenche
+    // les rendus des composants connectés ; 1s suffit pour une barre fluide.
+    const dispatchProgress = throttle((computedCount: number) => {
+      dispatch(updateLoadingAction(loadingActionId, computedCount));
+    }, 1000);
+    const hashes$ = computeHashes(fileIds, basePath, dispatchProgress);
 
     /**
      * Formats the hash computation results into a HashesMap, mapping file paths to their hashes or null.

@@ -1,7 +1,8 @@
 import { createHash } from "crypto";
+import { noop } from "lodash";
 import { join } from "path";
 import type { Observable } from "rxjs";
-import { throttleTime } from "rxjs/operators";
+import { finalize, throttleTime } from "rxjs/operators";
 
 import { isInCompressedFolder } from "../../../renderer/utils";
 import { ipcRenderer } from "../../ipc";
@@ -24,6 +25,11 @@ import {
   unhandledFileError,
 } from "./hash-errors";
 import { computeMd5 } from "./md5";
+
+// Canal main -> renderer pour la progression fichier par fichier du hachage.
+// Sans lui, la progression n'avance qu'à la fin de chaque chunk de 1500
+// fichiers, ce qui affiche 0% pendant de longues minutes sur un lecteur cloud.
+export const HASH_PROGRESS_CHANNEL = "hash.computeHashProgress";
 
 export interface HashComputingResult {
   hash: string;
@@ -78,17 +84,29 @@ export const computeHash = async (
 
 export const computeHashes = (
   files: string[],
-  basePath: string
+  basePath: string,
+  onProgress: (computedCount: number) => void = noop
 ): Observable<Queue<string, HashComputingResult, HashComputingError>> => {
+  // Progression par fichier envoyée par le main process pendant chaque chunk :
+  // les compteurs reçus repartent de zéro à chaque chunk, on les cumule ici.
+  let completedInPreviousChunks = 0;
+  const progressListener = (_event: unknown, ...args: unknown[]) => {
+    const completedInChunk = args[0];
+    if (typeof completedInChunk === "number") {
+      onProgress(completedInPreviousChunks + completedInChunk);
+    }
+  };
+  ipcRenderer.on(HASH_PROGRESS_CHANNEL, progressListener);
+
   const computeFn = computeQueue<
     string,
     HashComputingResult,
     HashComputingError
-  >(
-    async (filePaths: string[]) =>
-      ipcRenderer.invoke("hash.computeHash", filePaths),
-    isResult
-  );
+  >(async (filePaths: string[]) => {
+    const values = await ipcRenderer.invoke("hash.computeHash", filePaths);
+    completedInPreviousChunks += filePaths.length;
+    return values;
+  }, isResult);
 
   const paths = files.map((file) => join(basePath, file));
 
@@ -96,6 +114,9 @@ export const computeHashes = (
     throttleTime(1000, void 0, {
       leading: true,
       trailing: true,
+    }),
+    finalize(() => {
+      ipcRenderer.removeListener(HASH_PROGRESS_CHANNEL, progressListener);
     })
   );
 };
