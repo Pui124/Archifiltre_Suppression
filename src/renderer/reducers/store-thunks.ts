@@ -11,8 +11,10 @@ import { clipboard } from "electron";
 import fs from "fs";
 import { noop } from "lodash";
 import { compose } from "lodash/fp";
+import { batch } from "react-redux";
 import type { Observable, OperatorFunction } from "rxjs";
-import { tap } from "rxjs/operators";
+import { pipe } from "rxjs";
+import { bufferTime, filter, tap } from "rxjs/operators";
 
 import type { VirtualFileSystem } from "../files-and-folders-loader/files-and-folders-loader-types";
 import { firstHashesComputingThunk } from "../hash-computer/hash-computer-thunk";
@@ -232,13 +234,27 @@ const handleVirtualFileSystemThunk =
     void dispatch(handleNonJsonFileThunk(fileOrFolderPath, virtualFileSystem));
   };
 
+// Regroupe les erreurs de chargement par fenêtres de 1s : sur un lecteur
+// cloud défaillant, des milliers d'erreurs individuelles dispatchées une par
+// une saturent le renderer (un rendu React par dispatch) et gèlent l'UI.
+const LOAD_ERRORS_BUFFER_TIME = 1000;
+
 const makeLoadFilesAndFoldersErrorHandler = (
   dispatch: ArchifiltreDocsDispatch
 ) =>
-  tap<ErrorMessage>(({ error }) => {
-    dispatch(registerErrorAction(error as ArchifiltreDocsError));
-    dispatch(registerErroredElements([error as ArchifiltreDocsError]));
-  });
+  pipe(
+    bufferTime<ErrorMessage>(LOAD_ERRORS_BUFFER_TIME),
+    filter((messages) => messages.length > 0),
+    tap((messages) => {
+      const errors = messages.map(({ error }) => error as ArchifiltreDocsError);
+      batch(() => {
+        errors.forEach((error) => {
+          dispatch(registerErrorAction(error));
+        });
+        dispatch(registerErroredElements(errors));
+      });
+    })
+  );
 
 const makeLoadFilesAndFoldersResultHandler = (
   dispatch: ArchifiltreDocsDispatch
