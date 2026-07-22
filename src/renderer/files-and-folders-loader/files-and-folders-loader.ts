@@ -1,4 +1,5 @@
 import type { WorkerError } from "@common/types";
+import { makeConcurrencyLimiter, withTimeout } from "@common/utils/concurrency";
 import {
   ArchifiltreDocsErrorType,
   convertFsErrorToArchifiltreDocsError,
@@ -44,6 +45,13 @@ import type {
   WithVirtualPathToIdMap,
 } from "./files-and-folders-loader-types";
 
+// Borne la concurrence des opérations fs pour ne pas saturer les démons des
+// lecteurs cloud (Box Drive, OneDrive...) : chaque stat/readdir passe par leur
+// RPC. En local, le threadpool libuv borne déjà le débit réel.
+const FS_CONCURRENCY = 64;
+// Un stat/readdir qui dépasse ce délai est considéré en échec (retryable).
+const FS_OPERATION_TIMEOUT = 60_000;
+
 interface FilesAndFoldersInfo {
   lastModified: number;
   size: number;
@@ -78,9 +86,19 @@ const loadFilesAndFoldersFromFileSystemImpl = async (
 ) => {
   const files = [...fileInfos];
   const rootPath = path.dirname(folderPath);
+  // Limiteur par appel de chargement : les jetons ne sont posés que sur les
+  // appels fs feuilles (jamais sur les fonctions récursives, sinon un parent
+  // en attente de ses enfants tiendrait un jeton et créerait un deadlock).
+  const limitFs = makeConcurrencyLimiter(FS_CONCURRENCY);
 
   async function loadFoldersFromFileSystemRec(currentPath: string) {
-    const children = await fs.promises.readdir(currentPath);
+    const children = await limitFs(async () =>
+      withTimeout(
+        async () => fs.promises.readdir(currentPath),
+        FS_OPERATION_TIMEOUT,
+        `readdir ${currentPath}`
+      )
+    );
 
     return Promise.all(
       children.map(async (childPath) =>
@@ -90,11 +108,23 @@ const loadFilesAndFoldersFromFileSystemImpl = async (
   }
 
   async function loadZipFromFileSystemRec(currentPath: string) {
-    const zipContent = await fs.promises.readFile(currentPath);
+    // Lecture bornée mais sans timeout : sur un lecteur cloud, un gros zip
+    // doit être téléchargé en entier, ce qui peut légitimement durer.
+    const zipContent = await limitFs(async () =>
+      fs.promises.readFile(currentPath)
+    );
     const zip = await jszip.loadAsync(zipContent);
     for (const fileName in zip.files) {
       const filePath = `${currentPath}/${fileName}`;
-      if (await shouldIgnoreElement(filePath)) {
+      if (
+        await limitFs(async () =>
+          withTimeout(
+            async () => shouldIgnoreElement(filePath),
+            FS_OPERATION_TIMEOUT,
+            `attributes ${filePath}`
+          )
+        )
+      ) {
         continue;
       }
       if (fileName.endsWith("/")) {
@@ -117,10 +147,24 @@ const loadFilesAndFoldersFromFileSystemImpl = async (
 
   const loadFilesAndFoldersFromFileSystemRec = async (currentPath: string) => {
     try {
-      if (await shouldIgnoreElement(currentPath)) {
+      if (
+        await limitFs(async () =>
+          withTimeout(
+            async () => shouldIgnoreElement(currentPath),
+            FS_OPERATION_TIMEOUT,
+            `attributes ${currentPath}`
+          )
+        )
+      ) {
         return;
       }
-      const stats = await fs.promises.stat(currentPath);
+      const stats = await limitFs(async () =>
+        withTimeout(
+          async () => fs.promises.stat(currentPath),
+          FS_OPERATION_TIMEOUT,
+          `stat ${currentPath}`
+        )
+      );
 
       if (stats.isDirectory()) {
         await loadFoldersFromFileSystemRec(currentPath);
