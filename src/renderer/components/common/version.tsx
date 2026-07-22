@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import React from "react";
 
-import { version, versionName } from "../../version";
+import { forkName, forkVersion, version } from "../../version";
 
 export const Version: React.FC = () => {
   const style: CSSProperties = {
@@ -11,7 +11,7 @@ export const Version: React.FC = () => {
   };
   return (
     <div className="version" style={style}>
-      {`v${version} ${versionName}`}
+      {`${forkName} v${forkVersion} (Docs v${version})`}
     </div>
   );
 };

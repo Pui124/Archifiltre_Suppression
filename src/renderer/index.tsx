@@ -2,7 +2,6 @@
 import "./css/index.scss";
 import "./translations/translations";
 
-import { PRODUCT_CHANNEL } from "@common/config";
 import { get as getConfig } from "@common/modules/new-user-config";
 import {
   getTrackerProvider,
@@ -28,7 +27,7 @@ import {
 import { initPreviousSessions } from "./persistence/previous-sessions";
 import { SecretDevtools } from "./secret-devtools";
 import { setupLanguage } from "./utils/language";
-import { version } from "./version";
+import { forkName, forkVersion, version } from "./version";
 
 module.hot?.decline();
 
@@ -36,7 +35,7 @@ const setupSentryIntegrations = setupSentry();
 
 reportInfo("Docs started");
 
-document.title = `Docs v${version} (${PRODUCT_CHANNEL})`;
+document.title = `Archifiltre – ${forkName} v${forkVersion} (Docs v${version})`;
 
 SecretDevtools.enable();
 
