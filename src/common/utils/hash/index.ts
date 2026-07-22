@@ -1,5 +1,4 @@
 import { createHash } from "crypto";
-import md5File from "md5-file";
 import { join } from "path";
 import type { Observable } from "rxjs";
 import { throttleTime } from "rxjs/operators";
@@ -24,6 +23,7 @@ import {
   fileNotFound,
   unhandledFileError,
 } from "./hash-errors";
+import { computeMd5 } from "./md5";
 
 export interface HashComputingResult {
   hash: string;
@@ -61,7 +61,7 @@ export const computeHash = async (
   }
 
   try {
-    const hash = await md5File(filePath);
+    const hash = await computeMd5(filePath);
     return hashResult(filePath, hash);
   } catch (err: unknown) {
     const workerError = err as WorkerError;
