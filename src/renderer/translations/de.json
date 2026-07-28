@@ -373,7 +373,22 @@
         "deleting": "Löschen…",
         "progress": "{{done}} / {{total}} verarbeitet",
         "groupsPerPage": "Gruppen pro Seite:",
-        "confirm": "{{count}} Datei(en) in den Papierkorb verschieben?",
+        "cancelDeletion": "Anhalten",
+        "cancelling": "Wird angehalten…",
+        "cancelledTitle": "Löschung angehalten",
+        "loadingInfoLabel": "Duplikate werden gelöscht",
+        "loadedInfoLabel": "Löschen der Duplikate abgeschlossen",
+        "confirmDialog": {
+          "title": "Löschung bestätigen",
+          "summary": "{{count}} doppelte Datei(en) werden in den Papierkorb verschoben, {{size}} werden freigegeben.",
+          "md5On": "MD5-Prüfung vor dem Löschen: aktiviert",
+          "md5Off": "MD5-Prüfung vor dem Löschen: deaktiviert",
+          "reportOn": "Ein .txt-Bericht wird gespeichert (Speicherort wird anschließend gewählt).",
+          "reportOff": "Es wird kein Bericht erstellt.",
+          "trashNote": "Die Dateien werden in den Papierkorb verschoben: Der Vorgang ist umkehrbar.",
+          "cancel": "Abbrechen",
+          "confirm": "Löschen ({{count}})"
+        },
         "reportTitle": "Löschen abgeschlossen",
         "reportBody": "{{deleted}} gelöscht, {{skipped}} übersprungen, {{errors}} Fehler",
         "reportError": "Bericht konnte nicht geschrieben werden"

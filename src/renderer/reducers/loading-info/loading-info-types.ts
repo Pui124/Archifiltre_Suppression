@@ -15,6 +15,8 @@ export const DISMISS_ALL_COMPLETE = "LOADING_INFO/DISMISS_ALL_COMPLETE";
 
 export enum LoadingInfoTypes {
   // eslint-disable-next-line @typescript-eslint/naming-convention
+  DUPLICATES_DELETION = "duplicates-deletion",
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   EXPORT = "export",
   // eslint-disable-next-line @typescript-eslint/naming-convention
   HASH_COMPUTING = "hash-computing",

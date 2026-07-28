@@ -373,7 +373,22 @@
         "deleting": "Deleting…",
         "progress": "{{done}} / {{total}} processed",
         "groupsPerPage": "Groups per page:",
-        "confirm": "Send {{count}} file(s) to the trash?",
+        "cancelDeletion": "Stop",
+        "cancelling": "Stopping…",
+        "cancelledTitle": "Deletion stopped",
+        "loadingInfoLabel": "Deleting duplicates",
+        "loadedInfoLabel": "Duplicates deletion complete",
+        "confirmDialog": {
+          "title": "Confirm deletion",
+          "summary": "{{count}} duplicate file(s) will be sent to the trash, freeing {{size}}.",
+          "md5On": "MD5 check before deletion: enabled",
+          "md5Off": "MD5 check before deletion: disabled",
+          "reportOn": "A .txt report will be saved (you will pick its location next).",
+          "reportOff": "No report will be generated.",
+          "trashNote": "Files go to the trash: the operation is reversible.",
+          "cancel": "Cancel",
+          "confirm": "Delete ({{count}})"
+        },
         "reportTitle": "Deletion complete",
         "reportBody": "{{deleted}} deleted, {{skipped}} skipped, {{errors}} error(s)",
         "reportError": "Failed to write the report"

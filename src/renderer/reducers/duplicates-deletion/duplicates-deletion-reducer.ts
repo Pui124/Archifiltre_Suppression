@@ -3,6 +3,7 @@ import type {
   DuplicatesDeletionState,
 } from "./duplicates-deletion-types";
 import {
+  DUPLICATES_DELETION_CANCEL_REQUEST,
   DUPLICATES_DELETION_FINISH,
   DUPLICATES_DELETION_PROGRESS,
   DUPLICATES_DELETION_RESET,
@@ -10,6 +11,7 @@ import {
 } from "./duplicates-deletion-types";
 
 export const initialState: DuplicatesDeletionState = {
+  cancelRequested: false,
   isRunning: false,
   processed: 0,
   results: {},
@@ -25,6 +27,7 @@ export const duplicatesDeletionReducer = (
   switch (action?.type) {
     case DUPLICATES_DELETION_START:
       return {
+        cancelRequested: false,
         isRunning: true,
         processed: 0,
         results: {},
@@ -32,12 +35,25 @@ export const duplicatesDeletionReducer = (
         summary: null,
         total: action.total,
       };
-    case DUPLICATES_DELETION_PROGRESS:
+    case DUPLICATES_DELETION_PROGRESS: {
+      if (action.results.length === 0) {
+        return state;
+      }
+      // Un seul nouvel objet par lot : appliquer les résultats un par un
+      // copiait `results` en entier à chaque fichier (quadratique sur les
+      // grosses suppressions) et déclenchait un rendu React par fichier.
+      const results = { ...state.results };
+      action.results.forEach((result) => {
+        results[result.id] = result;
+      });
       return {
         ...state,
-        processed: state.processed + 1,
-        results: { ...state.results, [action.result.id]: action.result },
+        processed: state.processed + action.results.length,
+        results,
       };
+    }
+    case DUPLICATES_DELETION_CANCEL_REQUEST:
+      return state.isRunning ? { ...state, cancelRequested: true } : state;
     case DUPLICATES_DELETION_FINISH:
       return {
         ...state,

@@ -373,7 +373,22 @@
         "deleting": "Suppression…",
         "progress": "{{done}} / {{total}} traité(s)",
         "groupsPerPage": "Groupes par page :",
-        "confirm": "Envoyer {{count}} fichier(s) à la corbeille ?",
+        "cancelDeletion": "Arrêter",
+        "cancelling": "Arrêt en cours…",
+        "cancelledTitle": "Suppression arrêtée",
+        "loadingInfoLabel": "Suppression des doublons",
+        "loadedInfoLabel": "Suppression des doublons terminée",
+        "confirmDialog": {
+          "title": "Confirmer la suppression",
+          "summary": "{{count}} fichier(s) en double seront envoyés à la corbeille, libérant {{size}}.",
+          "md5On": "Vérification MD5 avant suppression : activée",
+          "md5Off": "Vérification MD5 avant suppression : désactivée",
+          "reportOn": "Un rapport .txt sera enregistré (emplacement à choisir ensuite).",
+          "reportOff": "Aucun rapport ne sera généré.",
+          "trashNote": "Les fichiers sont envoyés à la corbeille : l'opération reste réversible.",
+          "cancel": "Annuler",
+          "confirm": "Supprimer ({{count}})"
+        },
         "reportTitle": "Suppression terminée",
         "reportBody": "{{deleted}} supprimé(s), {{skipped}} ignoré(s), {{errors}} erreur(s)",
         "reportError": "Échec de l'écriture du rapport"

@@ -1,5 +1,7 @@
 export const DUPLICATES_DELETION_START = "DUPLICATES_DELETION/START";
 export const DUPLICATES_DELETION_PROGRESS = "DUPLICATES_DELETION/PROGRESS";
+export const DUPLICATES_DELETION_CANCEL_REQUEST =
+  "DUPLICATES_DELETION/CANCEL_REQUEST";
 export const DUPLICATES_DELETION_FINISH = "DUPLICATES_DELETION/FINISH";
 export const DUPLICATES_DELETION_RESET = "DUPLICATES_DELETION/RESET";
 
@@ -23,6 +25,8 @@ export interface DeletionSummary {
  * Redondances tab, which unmounts the deletion panel.
  */
 export interface DuplicatesDeletionState {
+  /** true once the user asked to stop: remaining files are left untouched */
+  cancelRequested: boolean;
   isRunning: boolean;
   /** number of processed copies so far (deleted + skipped + errored) */
   processed: number;
@@ -41,8 +45,13 @@ interface StartAction {
 }
 
 interface ProgressAction {
-  result: DeletionResult;
+  /** batch of results processed since the last flush (see thunk buffering) */
+  results: DeletionResult[];
   type: typeof DUPLICATES_DELETION_PROGRESS;
+}
+
+interface CancelRequestAction {
+  type: typeof DUPLICATES_DELETION_CANCEL_REQUEST;
 }
 
 interface FinishAction {
@@ -55,6 +64,7 @@ interface ResetAction {
 }
 
 export type DuplicatesDeletionAction =
+  | CancelRequestAction
   | FinishAction
   | ProgressAction
   | ResetAction

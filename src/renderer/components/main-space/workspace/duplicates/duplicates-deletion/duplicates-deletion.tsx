@@ -12,6 +12,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
+import { requestDuplicatesDeletionCancel } from "../../../../../reducers/duplicates-deletion/duplicates-deletion-actions";
 import { useDuplicatesDeletionState } from "../../../../../reducers/duplicates-deletion/duplicates-deletion-selectors";
 import { runDuplicatesDeletion } from "../../../../../reducers/duplicates-deletion/duplicates-deletion-thunks";
 import type { DeletionResult } from "../../../../../reducers/duplicates-deletion/duplicates-deletion-types";
@@ -29,6 +30,7 @@ import {
 } from "../../../../../utils/duplicates-deletion";
 import { promptUserForSave } from "../../../../../utils/file-system/file-system-util";
 import { Paginator } from "../../../../modals/search-modal/paginator";
+import { DeletionConfirmationDialog } from "./deletion-confirmation-dialog";
 import { useDuplicatesSelection } from "./use-duplicates-selection";
 
 const SORT_KEYS: DuplicateSortKey[] = [
@@ -87,6 +89,7 @@ export const DuplicatesDeletion: React.FC = () => {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(50);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const normalizedQuery = query.trim().toLowerCase();
   const filteredGroups = useMemo(() => {
@@ -124,16 +127,17 @@ export const DuplicatesDeletion: React.FC = () => {
     });
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (selection.selectedCount === 0 || isDeleting) {
       return;
     }
-    const confirmed = window.confirm(
-      t("duplicates.deletion.confirm", { count: selection.selectedCount })
-    );
-    if (!confirmed) {
-      return;
-    }
+    // The recap dialog (count, freed size, active safeguards) replaces the
+    // bare native window.confirm.
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmedDelete = async () => {
+    setConfirmOpen(false);
 
     // Ask where to save the report up front, so a cancel here aborts nothing
     // destructive yet: the user still confirms deletion below by proceeding.
@@ -394,21 +398,35 @@ export const DuplicatesDeletion: React.FC = () => {
       </Box>
 
       {isDeleting && (
-        <Box mb={1}>
-          <LinearProgress
-            variant={progress.total > 0 ? "determinate" : "indeterminate"}
-            value={
-              progress.total > 0
-                ? (progress.done / progress.total) * 100
-                : undefined
-            }
-          />
-          <Typography variant="caption" color="textSecondary">
-            {t("duplicates.deletion.progress", {
-              done: progress.done,
-              total: progress.total,
-            })}
-          </Typography>
+        <Box mb={1} display="flex" alignItems="center">
+          <Box flexGrow={1} mr={2}>
+            <LinearProgress
+              variant={progress.total > 0 ? "determinate" : "indeterminate"}
+              value={
+                progress.total > 0
+                  ? (progress.done / progress.total) * 100
+                  : undefined
+              }
+            />
+            <Typography variant="caption" color="textSecondary">
+              {t("duplicates.deletion.progress", {
+                done: progress.done,
+                total: progress.total,
+              })}
+            </Typography>
+          </Box>
+          <Button
+            size="small"
+            variant="outlined"
+            disabled={deletion.cancelRequested}
+            onClick={() => {
+              dispatch(requestDuplicatesDeletionCancel());
+            }}
+          >
+            {deletion.cancelRequested
+              ? t("duplicates.deletion.cancelling")
+              : t("duplicates.deletion.cancelDeletion")}
+          </Button>
         </Box>
       )}
 
@@ -431,6 +449,20 @@ export const DuplicatesDeletion: React.FC = () => {
           labelRowsPerPage={t("duplicates.deletion.groupsPerPage")}
         />
       )}
+
+      <DeletionConfirmationDialog
+        open={confirmOpen}
+        copiesCount={selection.selectedCount}
+        freedSize={selection.freedSize}
+        verifyMd5={verifyMd5}
+        generateReport={generateReport}
+        onCancel={() => {
+          setConfirmOpen(false);
+        }}
+        onConfirm={() => {
+          void handleConfirmedDelete();
+        }}
+      />
     </Box>
   );
 };
