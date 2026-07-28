@@ -1,3 +1,4 @@
+import { initialState as duplicatesDeletionInitialState } from "@renderer/reducers/duplicates-deletion/duplicates-deletion-reducer";
 import type { UndoableState } from "@renderer/reducers/enhancers/undoable/undoable-types";
 import { initialState as filesAndFoldersInitialState } from "@renderer/reducers/files-and-folders/files-and-folders-reducer";
 import { initialState as filesAndFoldersMetadataInitialState } from "@renderer/reducers/files-and-folders-metadata/files-and-folders-metadata-reducer";
@@ -15,6 +16,7 @@ import type { StoreState } from "@renderer/reducers/store";
  * Create an empty store state for testing purposes
  */
 export const createEmptyStore = (): StoreState => ({
+  duplicatesDeletion: duplicatesDeletionInitialState,
   filesAndFolders: wrapStoreWithUndoable(filesAndFoldersInitialState),
   filesAndFoldersMetadata: wrapStoreWithUndoable(
     filesAndFoldersMetadataInitialState
