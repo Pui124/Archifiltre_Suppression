@@ -1,13 +1,9 @@
 name: CD
+# Sur ce fork, le CD ne peut pas aboutir : il exige les secrets de signature
+# de SocialGouv (clé GPG, certificats Windows/macOS). On ne garde que le
+# déclenchement manuel pour éviter des échecs quotidiens (cron) et après
+# chaque push (workflow_run).
 on:
-  workflow_run:
-    workflows:
-      - CI
-    branches: [main, beta]
-    types:
-      - completed
-  schedule:
-    - cron: 0 1 * * * # every night at 1am on dev
   workflow_dispatch:
 
 env:

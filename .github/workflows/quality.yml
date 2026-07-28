@@ -9,6 +9,8 @@ jobs:
   quality:
     name: Quality Control on Node (ubuntu-latest)
     runs-on: ubuntu-latest
+    # Un run s'est déjà bloqué 6h (Jest ne se terminait pas) : on échoue vite.
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@v4
