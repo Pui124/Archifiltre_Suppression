@@ -23,12 +23,8 @@ import {
   getWorkspaceMetadataFromStore,
   useWorkspaceMetadata,
 } from "../../../reducers/workspace-metadata/workspace-metadata-selectors";
-import { isFolder } from "../../../utils";
 import { useFillColor } from "../../../utils/color";
-import {
-  createFilePathSequence,
-  getAllChildren,
-} from "../../../utils/file-and-folders";
+import { createFilePathSequence } from "../../../utils/file-and-folders";
 import type { IcicleMainProps } from "./icicle-main";
 import { IcicleMain } from "./icicle-main";
 
@@ -68,11 +64,8 @@ export const IcicleContainer: React.FC<IcicleContainerProps> = ({
   );
 
   const getAllChildrenFolderCount = useCallback(
-    (id: string) => {
-      const children = getAllChildren(filesAndFolders, id);
-      return children.map(getFfByFfId).filter(isFolder).length - 1;
-    },
-    [filesAndFolders, getFfByFfId]
+    (id: string) => filesAndFoldersMetadata[id].nbChildrenFolders,
+    [filesAndFoldersMetadata]
   );
 
   const maxDepth = useMemo(

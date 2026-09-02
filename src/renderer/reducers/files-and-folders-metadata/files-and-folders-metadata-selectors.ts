@@ -20,6 +20,7 @@ const DEFAULT_MEDIAN_LAST_MODIFIED = 0;
 const DEFAULT_AVERAGE_LAST_MODIFIED = 0;
 const DEFAULT_CHILDREN_TOTAL_SIZE = 1000;
 const DEFAULT_NB_CHILDREN_FILE = 1;
+const DEFAULT_NB_CHILDREN_FOLDERS = 0;
 const DEFAULT_SORT_BY_SIZE_INDEX = [0];
 const DEFAULT_SORT_BY_DATE_INDEX = [0];
 const DEFAULT_SORT_ALPHA_NUMERICALLY_INDEX = [0];
@@ -34,6 +35,7 @@ const DEFAULT_SORT_ALPHA_NUMERICALLY_INDEX = [0];
  * @param initialMaxLastModified
  * @param childrenTotalSize
  * @param nbChildrenFiles
+ * @param nbChildrenFolders
  * @param sortBySizeIndex
  * @param sortByDateIndex
  * @param sortAlphaNumericallyIndex
@@ -48,6 +50,7 @@ export const createFilesAndFoldersMetadata = ({
   initialMaxLastModified,
   childrenTotalSize,
   nbChildrenFiles,
+  nbChildrenFolders,
   sortBySizeIndex,
   sortByDateIndex,
   sortAlphaNumericallyIndex,
@@ -66,6 +69,7 @@ export const createFilesAndFoldersMetadata = ({
   medianLastModified: medianLastModified ?? DEFAULT_MEDIAN_LAST_MODIFIED,
   minLastModified: minLastModified ?? DEFAULT_MIN_LAST_MODIFIED,
   nbChildrenFiles: nbChildrenFiles ?? DEFAULT_NB_CHILDREN_FILE,
+  nbChildrenFolders: nbChildrenFolders ?? DEFAULT_NB_CHILDREN_FOLDERS,
   sortAlphaNumericallyIndex:
     sortAlphaNumericallyIndex ?? DEFAULT_SORT_ALPHA_NUMERICALLY_INDEX,
   sortByDateIndex: sortByDateIndex ?? DEFAULT_SORT_BY_DATE_INDEX,

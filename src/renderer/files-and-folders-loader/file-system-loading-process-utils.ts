@@ -14,7 +14,7 @@ import type {
 import { createFilesAndFoldersMetadata } from "../reducers/files-and-folders-metadata/files-and-folders-metadata-selectors";
 import type { FilesAndFoldersMetadataMap } from "../reducers/files-and-folders-metadata/files-and-folders-metadata-types";
 import { FileSystemLoadingStep } from "../reducers/loading-state/loading-state-types";
-import { isFile } from "../utils";
+import { isFile, isFolder } from "../utils";
 import { isJsonFile } from "../utils/file-system/file-sys-util";
 import { hookCounter } from "../utils/hook";
 import { version } from "../version";
@@ -72,6 +72,7 @@ export const createFilesAndFoldersMetadataDataStructure = (
         medianLastModified: fileLastModified,
         minLastModified: fileLastModified,
         nbChildrenFiles: 1,
+        nbChildrenFolders: 0,
         sortAlphaNumericallyIndex: [],
         sortByDateIndex: [],
         sortBySizeIndex: [],
@@ -116,6 +117,13 @@ export const createFilesAndFoldersMetadataDataStructure = (
     const nbChildrenFiles = _.sum(
       element.children.map((childId) => metadata[childId].nbChildrenFiles)
     );
+    const nbChildrenFolders = _.sum(
+      element.children.map((childId) =>
+        isFolder(filesAndFoldersMap[childId])
+          ? 1 + metadata[childId].nbChildrenFolders
+          : 0
+      )
+    );
     const sortByDateIndex = indexSort(
       (childId: string) => metadata[childId].averageLastModified,
       element.children
@@ -141,6 +149,7 @@ export const createFilesAndFoldersMetadataDataStructure = (
       medianLastModified,
       minLastModified,
       nbChildrenFiles,
+      nbChildrenFolders,
       sortAlphaNumericallyIndex,
       sortByDateIndex,
       sortBySizeIndex,

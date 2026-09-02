@@ -4,6 +4,7 @@ import { commitAction } from "@renderer/reducers/enhancers/undoable/undoable-act
 import {
   addChild,
   addCommentsOnFilesAndFolders,
+  deleteFilesAndFolders,
   overrideLastModified,
   removeChild,
   setFilesAndFoldersAliases,
@@ -16,6 +17,7 @@ import { ROOT_FF_ID } from "@renderer/reducers/files-and-folders/files-and-folde
 import {
   moveElement,
   overrideLastModifiedDateThunk,
+  removeElementsFromStore,
   updateAliasThunk,
   updateCommentThunk,
 } from "@renderer/reducers/files-and-folders/files-and-folders-thunks";
@@ -113,11 +115,27 @@ describe("file-and-folders-thunks.test.ts", () => {
       }),
     };
 
+    // Distinguishable placeholder values (not hand-verified arithmetic — that
+    // is covered by files-and-folders-metadata-incremental-update.test.ts):
+    // this fixture only needs to exist for every id moveElement touches, so
+    // the dispatch order and the reference-identity of the untouched branch
+    // (file2Id) can be asserted.
+    const metadataBefore = {
+      [ROOT_FF_ID]: createFilesAndFoldersMetadata({ childrenTotalSize: 100 }),
+      [file1Id]: createFilesAndFoldersMetadata({ childrenTotalSize: 10 }),
+      [file2Id]: createFilesAndFoldersMetadata({ childrenTotalSize: 20 }),
+      [folderId]: createFilesAndFoldersMetadata({ childrenTotalSize: 20 }),
+      [rootFolderId]: createFilesAndFoldersMetadata({ childrenTotalSize: 30 }),
+    };
+
     const state1 = {
       ...createEmptyStore(),
       filesAndFolders: wrapStoreWithUndoable({
         ...initialState,
         filesAndFolders,
+      }),
+      filesAndFoldersMetadata: wrapStoreWithUndoable({
+        filesAndFoldersMetadata: metadataBefore,
       }),
     };
     const state2 = {
@@ -126,13 +144,13 @@ describe("file-and-folders-thunks.test.ts", () => {
         ...initialState,
         filesAndFolders: filesAndFolders2,
       }),
+      filesAndFoldersMetadata: wrapStoreWithUndoable({
+        filesAndFoldersMetadata: metadataBefore,
+      }),
     };
 
     const createFilesAndFoldersMetadataDataStructureMock =
       createFilesAndFoldersMetadataDataStructure as jest.Mock;
-    const newMetadata = {
-      [file1Id]: createFilesAndFoldersMetadata({}),
-    };
 
     beforeEach(() => {
       notifyInfoMock.mockReset();
@@ -141,9 +159,6 @@ describe("file-and-folders-thunks.test.ts", () => {
 
     it("should do the right steps to move the element", () => {
       let addChildCalled = false;
-      createFilesAndFoldersMetadataDataStructureMock.mockReturnValue(
-        newMetadata
-      );
       const store = mockStore(() => (addChildCalled ? state2 : state1));
       store.subscribe(() => {
         const actions = store.getActions();
@@ -154,16 +169,27 @@ describe("file-and-folders-thunks.test.ts", () => {
 
       void store.dispatch(moveElement(file1Id, folderId));
 
-      expect(
-        createFilesAndFoldersMetadataDataStructureMock
-      ).toHaveBeenCalledWith(filesAndFolders2);
+      const actions = store.getActions();
+      expect(actions).toHaveLength(4);
+      expect(actions[0]).toEqual(removeChild(rootFolderId, file1Id));
+      expect(actions[1]).toEqual(addChild(folderId, file1Id));
+      expect(actions[3]).toEqual(commitAction());
 
-      expect(store.getActions()).toEqual([
-        removeChild(rootFolderId, file1Id),
-        addChild(folderId, file1Id),
-        initFilesAndFoldersMetatada(newMetadata),
-        commitAction(),
-      ]);
+      const dispatchedMetadata = actions[2].metadata as Record<
+        string,
+        unknown
+      >;
+      // Only the old parent (rootFolderId) and new parent (folderId), plus
+      // their shared ancestor chain up to root, are recomputed. file2Id sits
+      // untouched under folderId and must keep the exact same reference.
+      expect(dispatchedMetadata[file2Id]).toBe(metadataBefore[file2Id]);
+      expect(dispatchedMetadata[folderId]).not.toBe(metadataBefore[folderId]);
+      expect(dispatchedMetadata[rootFolderId]).not.toBe(
+        metadataBefore[rootFolderId]
+      );
+      expect(dispatchedMetadata[ROOT_FF_ID]).not.toBe(
+        metadataBefore[ROOT_FF_ID]
+      );
     });
     it("should block an element move from a parent to its child", () => {
       const store = mockStore(() => state1);
@@ -208,6 +234,91 @@ describe("file-and-folders-thunks.test.ts", () => {
       );
     });
   });
+  describe("removeElementsFromStore", () => {
+    const rootFolderId = "";
+    const folder1Id = "/folder1";
+    const folder2Id = "/folder2";
+    const toDeleteId = "/folder1/to-delete";
+    const untouchedId = "/folder2/untouched";
+
+    const filesAndFolders = {
+      [rootFolderId]: createFilesAndFolders({
+        children: [folder1Id, folder2Id],
+        id: rootFolderId,
+      }),
+      [folder1Id]: createFilesAndFolders({
+        children: [toDeleteId],
+        id: folder1Id,
+      }),
+      [folder2Id]: createFilesAndFolders({
+        children: [untouchedId],
+        id: folder2Id,
+      }),
+      [toDeleteId]: createFilesAndFolders({ id: toDeleteId }),
+      [untouchedId]: createFilesAndFolders({ id: untouchedId }),
+    };
+
+    const metadataBefore = {
+      [rootFolderId]: createFilesAndFoldersMetadata({ childrenTotalSize: 100 }),
+      [folder1Id]: createFilesAndFoldersMetadata({ childrenTotalSize: 10 }),
+      [folder2Id]: createFilesAndFoldersMetadata({ childrenTotalSize: 20 }),
+      [toDeleteId]: createFilesAndFoldersMetadata({ childrenTotalSize: 1 }),
+      [untouchedId]: createFilesAndFoldersMetadata({ childrenTotalSize: 2 }),
+    };
+
+    const buildStore = () =>
+      mockStore({
+        ...createEmptyStore(),
+        filesAndFolders: wrapStoreWithUndoable({
+          ...filesAndFoldersInitialState,
+          filesAndFolders,
+        }),
+        filesAndFoldersMetadata: wrapStoreWithUndoable({
+          filesAndFoldersMetadata: metadataBefore,
+        }),
+      });
+
+    it("dispatches delete, then a merged metadata update, then commit", () => {
+      const store = buildStore();
+
+      void store.dispatch(removeElementsFromStore([toDeleteId]));
+
+      const actions = store.getActions();
+      expect(actions[0]).toEqual(deleteFilesAndFolders([toDeleteId]));
+      expect(actions[2]).toEqual(commitAction());
+      expect(actions).toHaveLength(3);
+    });
+
+    it("only recomputes the ancestor chain of the deleted element's parent, and leaves an unaffected sibling branch untouched", () => {
+      const store = buildStore();
+
+      void store.dispatch(removeElementsFromStore([toDeleteId]));
+
+      const dispatchedMetadata = store.getActions()[1].metadata as Record<
+        string,
+        unknown
+      >;
+
+      // Unaffected sibling branch: same object reference as before, proving
+      // it was not recomputed.
+      expect(dispatchedMetadata[folder2Id]).toBe(metadataBefore[folder2Id]);
+      expect(dispatchedMetadata[untouchedId]).toBe(
+        metadataBefore[untouchedId]
+      );
+
+      // Ancestor chain of the deleted element's parent: recomputed, so a new
+      // object.
+      expect(dispatchedMetadata[folder1Id]).not.toBe(metadataBefore[folder1Id]);
+      expect(dispatchedMetadata[rootFolderId]).not.toBe(
+        metadataBefore[rootFolderId]
+      );
+
+      // The deleted element's own (now orphaned) metadata entry must not
+      // linger in the map.
+      expect(dispatchedMetadata[toDeleteId]).toBeUndefined();
+    });
+  });
+
   describe("updateFilesAndFolderHashes", () => {
     it("should dispatch an update action for each ff", () => {
       const hashes = {

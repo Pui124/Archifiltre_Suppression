@@ -12,6 +12,7 @@ export interface FilesAndFoldersMetadata {
   medianLastModified: number;
   minLastModified: number;
   nbChildrenFiles: number;
+  nbChildrenFolders: number;
   sortAlphaNumericallyIndex: number[];
   sortByDateIndex: number[];
   sortBySizeIndex: number[];

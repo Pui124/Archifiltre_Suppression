@@ -79,4 +79,8 @@ export class FilesAndFoldersMetadataMessage extends Message<FilesAndFoldersMetad
   @Field.d(12, "float")
   // @ts-expect-error
   public initialMaxLastModified: number;
+
+  @Field.d(13, "float")
+  // @ts-expect-error
+  public nbChildrenFolders: number;
 }

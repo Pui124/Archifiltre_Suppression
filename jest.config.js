@@ -46,7 +46,13 @@ module.exports = {
   projects: [
     {
       displayName: "integration",
-      testMatch: ["<rootDir>/tests/integration/**/?(*.)(spec|test).(ts|tsx)"],
+      // The equivalent extglob form ?(*.)(spec|test).(ts|tsx) breaks on
+      // Windows: micromatch mis-parses the pattern right after `**/`,
+      // turning that separator into a literal backslash and matching 0
+      // files. Every test file in this repo is named *.test.ts(x) (no
+      // *.spec.* or bare test.ts files), so a plain brace pattern covers
+      // the exact same set without hitting the bug.
+      testMatch: ["<rootDir>/tests/integration/**/*.test.{ts,tsx}"],
       ...defaultConfig,
     },
   ],
