@@ -223,8 +223,10 @@ export const loadFileSystemFromFilesAndFoldersLoader = async (
         metadataHooks
       ),
     }),
-    tap(() => {
-      metadataHooks.onStart();
+    tap((partialFileSystem: PartialFileSystem) => {
+      metadataHooks.onStart(
+        Object.keys(partialFileSystem.filesAndFolders).length
+      );
     })
   )(baseFileSystem);
 };
@@ -279,11 +281,17 @@ export const getLoader = (
 export const makeFileLoadingHooksCreator =
   ({ reportResult, reportError }: FileSystemReporters) =>
   (step: FileSystemLoadingStep): FileSystemLoadingHooks => {
+    // Fixé une fois par onStart puis reporté sur chaque tick de progression
+    // (resultReporter ne le connaît pas autrement) pour qu'un % stable reste
+    // affiché tout au long de l'étape plutôt que d'être effacé au tick suivant.
+    let stepTotalCount: number | undefined;
+
     const resultReporter = (count?: number) => {
       if (count) {
         reportResult({
           count: count,
           status: step,
+          totalCount: stepTotalCount,
         });
       }
     };
@@ -291,8 +299,12 @@ export const makeFileLoadingHooksCreator =
     const { hook: onResult, getCount: getResultCount } =
       hookCounter(resultReporter);
 
-    const onStart = () => {
-      resultReporter(0);
+    // Appel direct à reportResult (pas resultReporter, qui ignore un compte à
+    // 0) : le total doit être connu dès le début de l'étape pour afficher une
+    // progression en %, même si aucun résultat n'a encore été traité.
+    const onStart = (totalCount?: number) => {
+      stepTotalCount = totalCount;
+      reportResult({ count: 0, status: step, totalCount });
     };
     const onComplete = () => {
       resultReporter(getResultCount());

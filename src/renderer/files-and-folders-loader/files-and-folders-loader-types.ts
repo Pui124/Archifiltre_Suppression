@@ -139,7 +139,10 @@ export type WithErrorHook<T = SimpleObject> = T & {
 export type FileSystemLoadingHooks = WithErrorHook &
   WithResultHook & {
     onComplete: () => void;
-    onStart: () => void;
+    // totalCount, quand connu à l'avance (ex: nombre de fichiers déjà
+    // indexés avant de construire la structure), permet d'afficher une vraie
+    // progression en % plutôt qu'un simple compteur qui avance.
+    onStart: (totalCount?: number) => void;
   };
 
 export type FileSystemLoadingHooksCreator = (

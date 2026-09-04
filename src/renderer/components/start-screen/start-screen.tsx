@@ -21,6 +21,9 @@ import { StartscreenDropzone } from "./startscreen-dropzone";
 
 export interface StartScreenProps {
   cancelLoading: () => void;
+  constructedDataModelElementsCount: number;
+  currentStepTotalCount?: number;
+  derivedElementsCount: number;
   fileSystemLoadingStep: FileSystemLoadingStep;
   hasPreviousSession: boolean;
   indexedFilesCount: number;
@@ -52,6 +55,9 @@ export const StartScreen: React.FC<StartScreenProps> = ({
   isLoading,
   fileSystemLoadingStep,
   indexedFilesCount,
+  constructedDataModelElementsCount,
+  derivedElementsCount,
+  currentStepTotalCount,
   cancelLoading,
 }) => {
   const { t } = useTranslation();
@@ -110,6 +116,11 @@ export const StartScreen: React.FC<StartScreenProps> = ({
             <LoadingBlock
               fileSystemLoadingStep={fileSystemLoadingStep}
               indexedFilesCount={indexedFilesCount}
+              constructedDataModelElementsCount={
+                constructedDataModelElementsCount
+              }
+              derivedElementsCount={derivedElementsCount}
+              currentStepTotalCount={currentStepTotalCount}
               loadedPath={loadedPath}
               folderName={folderName}
               cancelLoading={cancelLoading}

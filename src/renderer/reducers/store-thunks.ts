@@ -73,6 +73,7 @@ import {
 import {
   resetLoadingState,
   setConstructedDataModelElementsCount,
+  setCurrentStepTotalCount,
   setDerivedElementsCount,
   setFileSystemLoadingStep,
   setIndexedFilesCount,
@@ -259,19 +260,22 @@ const makeLoadFilesAndFoldersErrorHandler = (
 const makeLoadFilesAndFoldersResultHandler = (
   dispatch: ArchifiltreDocsDispatch
 ) =>
-  tap<HookParam>(({ status, count = 0 } = defaultHookParam) => {
+  tap<HookParam>(({ status, count = 0, totalCount } = defaultHookParam) => {
     switch (status) {
       case FileSystemLoadingStep.INDEXING:
         dispatch(setIndexedFilesCount(count));
         dispatch(setFileSystemLoadingStep(status));
+        dispatch(setCurrentStepTotalCount(totalCount));
         break;
       case FileSystemLoadingStep.FILES_AND_FOLDERS:
         dispatch(setConstructedDataModelElementsCount(count));
         dispatch(setFileSystemLoadingStep(status));
+        dispatch(setCurrentStepTotalCount(totalCount));
         break;
       case FileSystemLoadingStep.METADATA:
         dispatch(setDerivedElementsCount(count));
         dispatch(setFileSystemLoadingStep(status));
+        dispatch(setCurrentStepTotalCount(totalCount));
         break;
       default:
         break;

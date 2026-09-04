@@ -5,6 +5,7 @@ import type {
 } from "./loading-state-types";
 import {
   RESET_LOADING_STATE,
+  SET_CURRENT_STEP_TOTAL_COUNT,
   SET_DATA_MODEL_ELEMENTS_COUNT,
   SET_DERIVED_ELEMENTS_COUNT,
   SET_FILE_SYSTEM_LOADING_STEP,
@@ -51,6 +52,16 @@ export const setConstructedDataModelElementsCount = (
 export const setDerivedElementsCount = (count: number): LoadingStateAction => ({
   count,
   type: SET_DERIVED_ELEMENTS_COUNT,
+});
+
+/**
+ * Set the total count expected for the current loading step, when known in advance
+ */
+export const setCurrentStepTotalCount = (
+  totalCount?: number
+): LoadingStateAction => ({
+  totalCount,
+  type: SET_CURRENT_STEP_TOTAL_COUNT,
 });
 
 /**

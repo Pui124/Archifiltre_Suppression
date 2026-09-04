@@ -39,9 +39,13 @@ export const StartScreenContainer: React.FC = () => {
     void dispatch(replayActionsThunk());
   }, [dispatch]);
 
-  const { fileSystemLoadingStep, indexedFilesCount } = useSelector(
-    getLoadingStateFromStore
-  );
+  const {
+    fileSystemLoadingStep,
+    indexedFilesCount,
+    constructedDataModelElementsCount,
+    derivedElementsCount,
+    currentStepTotalCount,
+  } = useSelector(getLoadingStateFromStore);
 
   const cancelLoading = useCallback(() => {
     terminateRef.current();
@@ -58,6 +62,9 @@ export const StartScreenContainer: React.FC = () => {
       isLoading={isLoading}
       fileSystemLoadingStep={fileSystemLoadingStep}
       indexedFilesCount={indexedFilesCount}
+      constructedDataModelElementsCount={constructedDataModelElementsCount}
+      derivedElementsCount={derivedElementsCount}
+      currentStepTotalCount={currentStepTotalCount}
       cancelLoading={cancelLoading}
     />
   );

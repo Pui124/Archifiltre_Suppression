@@ -46,11 +46,21 @@ import type {
 } from "./files-and-folders-loader-types";
 
 // Borne la concurrence des opérations fs pour ne pas saturer les démons des
-// lecteurs cloud (Box Drive, OneDrive...) : chaque stat/readdir passe par leur
-// RPC. En local, le threadpool libuv borne déjà le débit réel.
+// lecteurs réseau ou synchronisés depuis le cloud : chaque stat/readdir passe
+// par leur RPC. En local, le threadpool libuv borne déjà le débit réel.
 const FS_CONCURRENCY = 64;
-// Un stat/readdir qui dépasse ce délai est considéré en échec (retryable).
+// Un stat qui dépasse ce délai est considéré en échec (retryable). Rapide même
+// sur un lecteur réseau/cloud une fois le dossier parent listé (mesuré <1s
+// pour des milliers de fichiers).
 const FS_OPERATION_TIMEOUT = 60_000;
+// Le premier listage (readdir) d'un dossier jamais ouvert sur un lecteur
+// réseau ou synchronisé depuis le cloud déclenche la récupération de ses
+// métadonnées depuis le serveur : mesuré à plusieurs minutes pour de gros
+// dossiers, sans lien avec notre niveau de concurrence (un readdir non borné
+// est tout aussi lent).
+// Un timeout à 60s y déclenchait des échecs alors que le chargement progressait
+// simplement lentement ; on lui laisse donc beaucoup plus de marge.
+const FS_READDIR_TIMEOUT = 300_000;
 
 interface FilesAndFoldersInfo {
   lastModified: number;
@@ -94,15 +104,22 @@ const loadFilesAndFoldersFromFileSystemImpl = async (
   async function loadFoldersFromFileSystemRec(currentPath: string) {
     const children = await limitFs(async () =>
       withTimeout(
-        async () => fs.promises.readdir(currentPath),
-        FS_OPERATION_TIMEOUT,
+        async () => fs.promises.readdir(currentPath, { withFileTypes: true }),
+        FS_READDIR_TIMEOUT,
         `readdir ${currentPath}`
       )
     );
+    // Un dossier listé = de la progression visible même avant de trouver un
+    // fichier : sur un lecteur cloud, le listage initial peut a lui seul durer
+    // plusieurs minutes, l'utilisateur ne doit pas voir un compteur figé à 0.
+    onResult();
 
     return Promise.all(
-      children.map(async (childPath) =>
-        loadFilesAndFoldersFromFileSystemRec(path.join(currentPath, childPath))
+      children.map(async (child) =>
+        loadFilesAndFoldersFromFileSystemRec(
+          path.join(currentPath, child.name),
+          child
+        )
       )
     );
   }
@@ -145,7 +162,15 @@ const loadFilesAndFoldersFromFileSystemImpl = async (
     }
   }
 
-  const loadFilesAndFoldersFromFileSystemRec = async (currentPath: string) => {
+  const loadFilesAndFoldersFromFileSystemRec = async (
+    currentPath: string,
+    // Fourni par le readdir({withFileTypes: true}) du parent : évite un
+    // aller-retour stat() supplémentaire rien que pour savoir si c'est un
+    // dossier. Absent pour l'appel racine et les liens symboliques, auquel cas
+    // on retombe sur stat() (dirent.isDirectory() est toujours faux pour un
+    // lien, même vers un dossier).
+    dirent?: fs.Dirent
+  ) => {
     try {
       if (
         await limitFs(async () =>
@@ -158,6 +183,12 @@ const loadFilesAndFoldersFromFileSystemImpl = async (
       ) {
         return;
       }
+
+      if (dirent?.isDirectory()) {
+        await loadFoldersFromFileSystemRec(currentPath);
+        return;
+      }
+
       const stats = await limitFs(async () =>
         withTimeout(
           async () => fs.promises.stat(currentPath),
@@ -478,7 +509,7 @@ export const makeFileSystemLoader =
     const filesAndFoldersHooks = sanitizedHooks(
       FileSystemLoadingStep.FILES_AND_FOLDERS
     );
-    filesAndFoldersHooks.onStart();
+    filesAndFoldersHooks.onStart(fileSystemInfo.length);
     const filesAndFolders = createFilesAndFoldersDataStructure(
       fileSystemInfo,
       filesAndFoldersHooks

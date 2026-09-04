@@ -6,6 +6,8 @@ export const SET_DATA_MODEL_ELEMENTS_COUNT =
   "loadingState/SET_DATA_MODEL_ELEMENTS_COUNT";
 export const SET_DERIVED_ELEMENTS_COUNT =
   "loadingState/SET_DERIVED_ELEMENTS_COUNT";
+export const SET_CURRENT_STEP_TOTAL_COUNT =
+  "loadingState/SET_CURRENT_STEP_TOTAL_COUNT";
 export const RESET_LOADING_STATE = "loadingState/RESET_LOADING_STATE";
 
 export const loadingStateActionTypes = [
@@ -14,6 +16,7 @@ export const loadingStateActionTypes = [
   SET_INDEXED_FILES_COUNT,
   SET_DATA_MODEL_ELEMENTS_COUNT,
   SET_DERIVED_ELEMENTS_COUNT,
+  SET_CURRENT_STEP_TOTAL_COUNT,
   RESET_LOADING_STATE,
 ];
 
@@ -33,6 +36,9 @@ export enum FileSystemLoadingStep {
 
 export interface LoadingState {
   constructedDataModelElementsCount: number;
+  // Nombre total attendu pour l'étape en cours, quand il est connu à
+  // l'avance (undefined pour INDEXING, dont le total se découvre en marchant).
+  currentStepTotalCount?: number;
   derivedElementsCount: number;
   fileSystemLoadingStep: FileSystemLoadingStep;
   indexedFilesCount: number;
@@ -64,6 +70,11 @@ interface SetDerivedElementsCount {
   type: typeof SET_DERIVED_ELEMENTS_COUNT;
 }
 
+interface SetCurrentStepTotalCount {
+  totalCount?: number;
+  type: typeof SET_CURRENT_STEP_TOTAL_COUNT;
+}
+
 interface ResetLoadingState {
   type: typeof RESET_LOADING_STATE;
 }
@@ -71,6 +82,7 @@ interface ResetLoadingState {
 export type LoadingStateAction =
   | ResetLoadingState
   | SetConstructedDataModelElementsCount
+  | SetCurrentStepTotalCount
   | SetDerivedElementsCount
   | SetFileSystemLoadingStep
   | SetIndexedFilesCount

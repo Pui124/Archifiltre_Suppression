@@ -4,6 +4,7 @@ import {
   FileSystemLoadingStep,
   LoadingStep,
   RESET_LOADING_STATE,
+  SET_CURRENT_STEP_TOTAL_COUNT,
   SET_DATA_MODEL_ELEMENTS_COUNT,
   SET_DERIVED_ELEMENTS_COUNT,
   SET_FILE_SYSTEM_LOADING_STEP,
@@ -13,6 +14,7 @@ import {
 
 export const initialState: LoadingState = {
   constructedDataModelElementsCount: 0,
+  currentStepTotalCount: undefined,
   derivedElementsCount: 0,
   fileSystemLoadingStep: FileSystemLoadingStep.INDEXING,
   indexedFilesCount: 0,
@@ -50,6 +52,11 @@ export const loadingStateReducer = (
       return {
         ...state,
         derivedElementsCount: action.count,
+      };
+    case SET_CURRENT_STEP_TOTAL_COUNT:
+      return {
+        ...state,
+        currentStepTotalCount: action.totalCount,
       };
     default:
       return state;
